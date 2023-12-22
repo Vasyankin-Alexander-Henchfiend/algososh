@@ -6,16 +6,17 @@ import { Circle } from "../ui/circle/circle";
 import styles from "./string.module.css";
 import { ElementStates } from "../../types/element-states";
 
-type TString = {
+type TArrayElement = {
   state: ElementStates,
-  value: string
+  value: string,
+
 }
 
 export const StringComponent: React.FC = () => {
 
   const [ inputValue, setInputValue ] = useState<string>('')
   // массив который мы создали из строки
-  const [ array, setArray ] = useState<Array<JSX.Element>>()
+  const [ circles, setCircles ] = useState<Array<JSX.Element>>()
   // стейт для лоадера
   const [ loader, setLoader ] = useState<boolean>(false)
   
@@ -24,32 +25,34 @@ export const StringComponent: React.FC = () => {
     setInputValue(event.target.value)
   }
   
-  function takeArray(item: Array<TString>) {
-    setArray(item.map((a) => {
-      return <Circle letter={a.value} state={a.state}/>
+  function takeArray(item: Array<TArrayElement>) {
+    setCircles(item.map((a, index: number) => {
+      return <Circle letter={a.value} state={a.state} key={index}/>
     }))
   }
   
   const onClick = () => {
     setLoader(true)
-    const string = Array.from(inputValue).map((item) => {return {value: item, state: ElementStates.Default} as TString})
-    takeArray(string)
-    sortArray(string).finally(() => {
+    const array = Array.from(inputValue).map((item) => {return {value: item, state: ElementStates.Default} as TArrayElement})
+    setInputValue('')
+    takeArray(array)
+    sortArray(array).finally(() => {
       setLoader(false)
     })
   }
   
-  async function promiseFunc(array: Array<TString>) {
+  // исправить название
+  async function promiseFunc(array: Array<TArrayElement>) {
     takeArray(array)
     await new Promise((resolve) => setTimeout(resolve, 1000))
   }
 
-  async function sortArray(array: Array<TString>) {
+  async function sortArray(array: Array<TArrayElement>) {
     let start = 0;
     let end = array?.length - 1;
     while(start <= end) {
-      const startValue: TString = array[start];
-      const endValue: TString = array[end];
+      const startValue: TArrayElement = array[start];
+      const endValue: TArrayElement = array[end];
 
       startValue.state = ElementStates.Changing;
       endValue.state = ElementStates.Changing;
@@ -71,7 +74,7 @@ export const StringComponent: React.FC = () => {
         <Button text='Развернуть' type='button' isLoader={loader} onClick={onClick} />
       </div>
       <div className={styles[`circle-wrapper`]}>
-      {array}
+      {circles}
       </div>
     </SolutionLayout>
   );
