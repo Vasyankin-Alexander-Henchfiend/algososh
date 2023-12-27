@@ -53,7 +53,7 @@ export const StackPage: React.FC = () => {
     setInputValue(event.target.value);
   };
 
-  function getCircles(a: boolean = true) {
+  function getCircles(boolean: boolean = true) {
     return stack.storage.map((item, index: number) => {
       return (
         <Circle
@@ -62,7 +62,7 @@ export const StackPage: React.FC = () => {
           index={index}
           head={stack.storage.length - 1 === index ? "top" : ""}
           state={
-            stack.storage.length - 1 === index && a === true
+            stack.storage.length - 1 === index && boolean
               ? ElementStates.Changing
               : ElementStates.Default
           }
@@ -72,7 +72,7 @@ export const StackPage: React.FC = () => {
   }
 
   async function refreshCircles() {
-    setCircles(getCircles())
+    setCircles(getCircles());
     await new Promise((resolve) =>
       setTimeout(resolve, SHORT_DELAY_IN_MS)
     ).finally(() => setCircles(getCircles(false)));
@@ -113,7 +113,7 @@ export const StackPage: React.FC = () => {
             type="button"
             isLoader={false}
             onClick={addNumber}
-            disabled={inputValue === '' ? true : false}
+            disabled={inputValue === "" ? true : false}
           />
           <Button
             text="Удалить"
