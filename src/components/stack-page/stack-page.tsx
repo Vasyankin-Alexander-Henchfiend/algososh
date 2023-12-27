@@ -53,7 +53,7 @@ export const StackPage: React.FC = () => {
     setInputValue(event.target.value);
   };
 
-  function getCircles(boolean: boolean = true) {
+  function getCircles(isChecked: boolean = true) {
     return stack.storage.map((item, index: number) => {
       return (
         <Circle
@@ -62,7 +62,7 @@ export const StackPage: React.FC = () => {
           index={index}
           head={stack.storage.length - 1 === index ? "top" : ""}
           state={
-            stack.storage.length - 1 === index && boolean
+            stack.storage.length - 1 === index && isChecked
               ? ElementStates.Changing
               : ElementStates.Default
           }
