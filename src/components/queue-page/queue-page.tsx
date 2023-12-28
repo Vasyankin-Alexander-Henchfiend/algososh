@@ -1,4 +1,10 @@
-import React, { useMemo, useState, ChangeEvent, useEffect } from "react";
+import React, {
+  useMemo,
+  useState,
+  ChangeEvent,
+  useEffect,
+  useCallback,
+} from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import { Button } from "../ui/button/button";
 import { Input } from "../ui/input/input";
@@ -30,7 +36,7 @@ class Queue<T> implements TQueue<T> {
     if (this.isFull()) {
       throw Error("Queue has reached max capacity, you cannot add more items");
     }
-    if (this.storage[0] === null) {
+    if (this.storage[0] === null && this.tail === 0) {
       this.storage[0] = item;
     } else {
       this.tail++;
@@ -69,38 +75,50 @@ export const QueuePage: React.FC = () => {
   const queue = useMemo(() => new Queue<string>(7), []);
   const [inputValue, setInputValue] = useState<string>("");
   const [circles, setCircles] = useState<Array<JSX.Element>>();
-  const [ isAddBtnClick, setIsAddBtnClick ] = useState<boolean>(false)
-  const [ isDelBtnClick, setIsDelBtnClick ] = useState<boolean>(false)
+  const [isAddBtnClick, setIsAddBtnClick] = useState<boolean>(false);
+  const [isDelBtnClick, setIsDelBtnClick] = useState<boolean>(false);
+
+  const getCircles = useCallback(() => {
+    setCircles(
+      queue.storage.map((item, index) => {
+        return (
+          <Circle
+            letter={item === null ? "" : item}
+            key={index}
+            index={index}
+            head={
+              (index === queue.getHead() && item !== null) ||
+              (index === queue.getHead() &&
+                queue.getHead() === queue.size() - 1)
+                ? "head"
+                : ""
+            }
+            tail={index === queue.getTail() && item !== null ? "tail" : ""}
+            state={
+              (isAddBtnClick &&
+                (queue.storage[0] !== null || queue.getHead() > 0) &&
+                queue.getTail() + 1 === index) ||
+              (isAddBtnClick &&
+                queue.getTail() === 0 &&
+                index === 0 &&
+                queue.storage[0] === null) ||
+              (index === queue.getHead() && item !== null && isDelBtnClick)
+                ? ElementStates.Changing
+                : ElementStates.Default
+            }
+          />
+        );
+      })
+    );
+  }, [setCircles, queue, isAddBtnClick, isDelBtnClick]);
 
   useEffect(() => {
-    setCircles(getCircles());
-  }, []);
-
-  function getCircles() {
-    return queue.storage.map((item, index) => {
-      return (
-        <Circle
-          letter={item === null ? "" : item}
-          key={index}
-          index={index}
-          head={(index === queue.getHead() && item !== null) ||  (index === queue.getHead() && queue.getHead() === queue.size() - 1) ? "head" : ""}
-          tail={index === queue.getTail() && item !== null ? "tail" : ""}
-          state={
-            (isAddBtnClick && queue.getTail() + 1 === index && item === null)
-            // (index === queue.getHead() && item !== null && isDelBtnClick)
-              ? ElementStates.Changing
-              : ElementStates.Default
-          }
-        />
-      );
-    });
-  }
+    getCircles();
+  }, [getCircles]);
 
   async function refreshCircles() {
-    setCircles(getCircles());
-    await new Promise((resolve) =>
-      setTimeout(resolve, SHORT_DELAY_IN_MS)
-    ).finally(() => setCircles(getCircles()));
+    getCircles();
+    await new Promise((resolve) => setTimeout(resolve, SHORT_DELAY_IN_MS));
   }
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -108,27 +126,27 @@ export const QueuePage: React.FC = () => {
   };
 
   const addNumber = async () => {
-    setIsAddBtnClick(true)
-    await refreshCircles();
-    queue.enqueue(inputValue);
     setInputValue("");
-    setIsAddBtnClick(false)
-    setCircles(getCircles());
+    setIsAddBtnClick(true);
+    await refreshCircles();
+    setIsAddBtnClick(false);
+    queue.enqueue(inputValue);
+    getCircles();
   };
 
   const deleteNumber = async () => {
-    setIsDelBtnClick(true)
-    await refreshCircles();
     setInputValue("");
+    setIsDelBtnClick(true);
+    await refreshCircles();
     queue.dequeue();
-    setIsDelBtnClick(false)
-    setCircles(getCircles());
+    setIsDelBtnClick(false);
+    getCircles();
   };
 
   const clearAll = () => {
-    queue.clear();
-    setCircles(getCircles());
     setInputValue("");
+    queue.clear();
+    getCircles();
   };
 
   return (
