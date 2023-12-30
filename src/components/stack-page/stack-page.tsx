@@ -1,4 +1,4 @@
-import React, { useMemo, useState, ChangeEvent } from "react";
+import React, { useRef, useState, ChangeEvent } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import { Button } from "../ui/button/button";
 import { Input } from "../ui/input/input";
@@ -45,7 +45,7 @@ class Stack<T> implements TStack<T> {
 }
 
 export const StackPage: React.FC = () => {
-  const stack = useMemo(() => new Stack<string>(), []);
+  const stack = useRef(new Stack<string>());
   const [inputValue, setInputValue] = useState<string>("");
   const [circles, setCircles] = useState<Array<JSX.Element>>();
 
@@ -54,15 +54,15 @@ export const StackPage: React.FC = () => {
   };
 
   function getCircles(isChecked: boolean = true) {
-    return stack.storage.map((item, index: number) => {
+    return stack.current.storage.map((item, index: number) => {
       return (
         <Circle
           letter={item}
           key={index}
           index={index}
-          head={stack.storage.length - 1 === index ? "top" : ""}
+          head={stack.current.storage.length - 1 === index ? "top" : ""}
           state={
-            stack.storage.length - 1 === index && isChecked
+            stack.current.storage.length - 1 === index && isChecked
               ? ElementStates.Changing
               : ElementStates.Default
           }
@@ -79,7 +79,7 @@ export const StackPage: React.FC = () => {
   }
 
   const addNumber = async () => {
-    stack.push(inputValue);
+    stack.current.push(inputValue);
     setInputValue("");
     await refreshCircles();
   };
@@ -87,12 +87,12 @@ export const StackPage: React.FC = () => {
   const deleteNumber = async () => {
     setInputValue("");
     await refreshCircles();
-    stack.pop();
+    stack.current.pop();
     setCircles(getCircles(false));
   };
 
   const clearAll = () => {
-    stack.clear();
+    stack.current.clear();
     setInputValue("");
     setCircles([]);
   };

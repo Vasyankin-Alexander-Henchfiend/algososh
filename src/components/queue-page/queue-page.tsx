@@ -1,5 +1,5 @@
 import React, {
-  useMemo,
+  useRef,
   useState,
   ChangeEvent,
   useEffect,
@@ -25,12 +25,12 @@ class Queue<T> implements TQueue<T> {
   private readonly queueSize: number = 0;
   private head: number = 0;
   private tail: number = 0;
-  isFull = () => this.tail === this.queueSize - 1;
-
+  
   constructor(size: number) {
     this.queueSize = size;
     this.storage = Array(size).fill(null);
   }
+  isFull = () => this.tail === this.queueSize - 1;
 
   enqueue(item: T): void {
     if (this.isFull()) {
@@ -72,7 +72,7 @@ class Queue<T> implements TQueue<T> {
 }
 
 export const QueuePage: React.FC = () => {
-  const queue = useMemo(() => new Queue<string>(7), []);
+  const queue = useRef(new Queue<string>(7));
   const [inputValue, setInputValue] = useState<string>("");
   const [circles, setCircles] = useState<Array<JSX.Element>>();
   const [isAddBtnClick, setIsAddBtnClick] = useState<boolean>(false);
@@ -80,29 +80,29 @@ export const QueuePage: React.FC = () => {
 
   const getCircles = useCallback(() => {
     setCircles(
-      queue.storage.map((item, index) => {
+      queue.current.storage.map((item, index) => {
         return (
           <Circle
             letter={item === null ? "" : item}
             key={index}
             index={index}
             head={
-              (index === queue.getHead() && item !== null) ||
-              (index === queue.getHead() &&
-                queue.getHead() === queue.size() - 1)
+              (index === queue.current.getHead() && item !== null) ||
+              (index === queue.current.getHead() &&
+                queue.current.getHead() === queue.current.size() - 1)
                 ? "head"
                 : ""
             }
-            tail={index === queue.getTail() && item !== null ? "tail" : ""}
+            tail={index === queue.current.getTail() && item !== null ? "tail" : ""}
             state={
               (isAddBtnClick &&
-                (queue.storage[0] !== null || queue.getHead() > 0) &&
-                queue.getTail() + 1 === index) ||
+                (queue.current.storage[0] !== null || queue.current.getHead() > 0) &&
+                queue.current.getTail() + 1 === index) ||
               (isAddBtnClick &&
-                queue.getTail() === 0 &&
+                queue.current.getTail() === 0 &&
                 index === 0 &&
-                queue.storage[0] === null) ||
-              (index === queue.getHead() && item !== null && isDelBtnClick)
+                queue.current.storage[0] === null) ||
+              (index === queue.current.getHead() && item !== null && isDelBtnClick)
                 ? ElementStates.Changing
                 : ElementStates.Default
             }
@@ -130,22 +130,20 @@ export const QueuePage: React.FC = () => {
     setIsAddBtnClick(true);
     await refreshCircles();
     setIsAddBtnClick(false);
-    queue.enqueue(inputValue);
-    getCircles();
+    queue.current.enqueue(inputValue);
   };
 
   const deleteNumber = async () => {
     setInputValue("");
     setIsDelBtnClick(true);
     await refreshCircles();
-    queue.dequeue();
+    queue.current.dequeue();
     setIsDelBtnClick(false);
-    getCircles();
   };
 
   const clearAll = () => {
     setInputValue("");
-    queue.clear();
+    queue.current.clear();
     getCircles();
   };
 
