@@ -1,3 +1,9 @@
+.controls-container {
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+}
+
 .button-wrapper {
     display: flex;
     gap: 12px;

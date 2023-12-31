@@ -56,7 +56,7 @@ export const FibonacciPage: React.FC = () => {
           max={19}
           value={inputValue === undefined ? "" : inputValue}
           onChange={onChange}
-        ></Input>
+        />
         <Button
           text="Развернуть"
           type="button"

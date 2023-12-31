@@ -148,6 +148,62 @@ class LinkedList<T> {
 
     return nodes;
   }
+
+  getByIndex(index: number | undefined) {
+    let counter = 0;
+
+    if (index) {
+      if (index >= this.toArray().length || index < 0) {
+        return null;
+      }
+
+      let current = this.head;
+
+      while (counter < index) {
+        if (current) {
+          current = current.next;
+          counter++;
+        }
+      }
+      return current;
+    }
+  }
+
+  addByIndex(index: number | undefined, value: T) {
+    if (index) {
+      if (index >= this.toArray().length || index < 0) {
+        return null;
+      }
+
+      if (index === 0) {
+        this.prepend(value);
+        return this;
+      }
+
+      const prevNode = this.getByIndex(index - 1);
+      const nextNode = this.getByIndex(index);
+
+      if (prevNode && nextNode) {
+        prevNode.next = new LinkedListNode(value, nextNode);
+      }
+    }
+    return this;
+  }
+
+  deleteByIndex(index: number | undefined) {
+    if(index) {
+      if (index >= this.toArray().length || index < 0) {
+        return null;
+      }
+
+      if (index === 0) {
+        this.deleteHead()
+        return this;
+      }
+
+      
+    }
+  }
 }
 
 type TListElement = {
@@ -174,10 +230,18 @@ export const ListPage: React.FC = () => {
     // .append({ ...defaultListElement, value: "8" })
     // .append({ ...defaultListElement, value: "1", tail: 'tail' })
   );
-  const [inputValue, setInputValue] = useState<string>("");
+  const [inputNumberValue, setInputNumberValue] = useState<string>("");
+  const [inputIndexValue, setInputIndexValue] = useState<number | undefined>(
+    undefined
+  );
   const [array, setArray] = useState<(TListElement | null)[]>();
-  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setInputValue(event.target.value);
+
+  const onNumberInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setInputNumberValue(event.target.value);
+  };
+
+  const onIndexInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setInputIndexValue(event.target.valueAsNumber);
   };
 
   useEffect(() => {
@@ -227,10 +291,10 @@ export const ListPage: React.FC = () => {
     const initialHead = linkedList.current.getHead();
     const itemBeingAdded = {
       ...defaultListElement,
-      value: inputValue,
+      value: inputNumberValue,
       state: ElementStates.Changing,
     };
-    setInputValue("");
+    setInputNumberValue("");
 
     if (initialHead === undefined || initialHead === null) {
       itemBeingAdded.state = ElementStates.Default;
@@ -286,10 +350,10 @@ export const ListPage: React.FC = () => {
     const initialTail = linkedList.current.getTail();
     const itemBeingAdded = {
       ...defaultListElement,
-      value: inputValue,
+      value: inputNumberValue,
       state: ElementStates.Changing,
     };
-    setInputValue("");
+    setInputNumberValue("");
 
     if (initialTail === undefined || initialTail === null) {
       itemBeingAdded.state = ElementStates.Default;
@@ -302,7 +366,7 @@ export const ListPage: React.FC = () => {
     await refreshCircles();
 
     initialTail.tail = "";
-    initialTail.head = '';
+    initialTail.head = "";
     linkedList.current.append({
       ...itemBeingAdded,
       state: ElementStates.Modified,
@@ -328,8 +392,8 @@ export const ListPage: React.FC = () => {
     const removedItem = {
       ...initialTail,
       state: ElementStates.Changing,
-    }
-    initialTail.value = '';
+    };
+    initialTail.value = "";
     initialTail.tail = renderCircle(removedItem, true);
     await refreshCircles();
 
@@ -341,40 +405,84 @@ export const ListPage: React.FC = () => {
     await refreshCircles();
   };
 
+  const addByIndex = async () => {
+    const initialItem = {
+      ...defaultListElement,
+      value: inputNumberValue,
+      state: ElementStates.Modified
+    }
+    linkedList.current.addByIndex(inputIndexValue, initialItem)
+    setInputNumberValue('');
+    setInputIndexValue(undefined);
+    await refreshCircles();
+    const newElement = linkedList.current.getByIndex(inputIndexValue)?.value
+    if(newElement) {
+      newElement.state = ElementStates.Default
+    }
+    await refreshCircles();
+  };
+
+  const deleteByIndex = async () => {
+    setInputIndexValue(undefined);
+  };
+
   return (
     <SolutionLayout title="Связный список">
-      <div className={styles[`button-wrapper`]}>
-        <Input
-          type="text"
-          isLimitText={true}
-          maxLength={4}
-          value={inputValue}
-          onChange={onChange}
-        />
-        <Button
-          text="Добавить в head"
-          type="button"
-          isLoader={false}
-          onClick={addHead}
-        />
-        <Button
-          text="Добавить в tail"
-          type="button"
-          isLoader={false}
-          onClick={addTail}
-        />
-        <Button
-          text="Удалить из head"
-          type="button"
-          isLoader={false}
-          onClick={deleteHead}
-        />
-        <Button
-          text="Удалить из tail"
-          type="button"
-          isLoader={false}
-          onClick={deleteTail}
-        />
+      <div className={styles[`controls-container`]}>
+        <div className={styles[`button-wrapper`]}>
+          <Input
+            type="text"
+            placeholder="введите значение"
+            isLimitText={true}
+            maxLength={4}
+            value={inputNumberValue}
+            onChange={onNumberInputChange}
+          />
+          <Button
+            text="Добавить в head"
+            type="button"
+            isLoader={false}
+            onClick={addHead}
+          />
+          <Button
+            text="Добавить в tail"
+            type="button"
+            isLoader={false}
+            onClick={addTail}
+          />
+          <Button
+            text="Удалить из head"
+            type="button"
+            isLoader={false}
+            onClick={deleteHead}
+          />
+          <Button
+            text="Удалить из tail"
+            type="button"
+            isLoader={false}
+            onClick={deleteTail}
+          />
+        </div>
+        <div className={styles[`button-wrapper`]}>
+          <Input
+            type="number"
+            placeholder="введите индекс"
+            value={inputIndexValue  === undefined ? "" : inputIndexValue}
+            onChange={onIndexInputChange}
+          />
+          <Button
+            text="Добавить по индексу"
+            type="button"
+            isLoader={false}
+            onClick={addByIndex}
+          />
+          <Button
+            text="Удалить по индексу"
+            type="button"
+            isLoader={false}
+            onClick={deleteByIndex}
+          />
+        </div>
       </div>
       <div className={styles[`circles`]}>
         {array?.map((item, index) => (
