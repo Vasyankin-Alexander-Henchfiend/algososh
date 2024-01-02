@@ -1,4 +1,10 @@
-import React, { useState, ChangeEvent, useRef, useEffect } from "react";
+import React, {
+  useState,
+  ChangeEvent,
+  useRef,
+  useEffect,
+  MouseEvent,
+} from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import { Input } from "../ui/input/input";
 import { Button } from "../ui/button/button";
@@ -7,15 +13,13 @@ import { ElementStates } from "../../types/element-states";
 import { Circle } from "../ui/circle/circle";
 import { SHORT_DELAY_IN_MS } from "../../constants/delays";
 import { ArrowIcon } from "../ui/icons/arrow-icon";
+import { TCurrentButton, TListElement } from "./list-page.types";
 
 class LinkedListNode<T> {
-  value: T | null = null;
+  value: T;
   next: LinkedListNode<T> | undefined = undefined;
 
-  constructor(
-    value: T | null = null,
-    next: LinkedListNode<T> | undefined = undefined
-  ) {
+  constructor(value: T, next: LinkedListNode<T> | undefined = undefined) {
     this.value = value;
     this.next = next;
   }
@@ -136,8 +140,8 @@ class LinkedList<T> {
     return this.tail?.value;
   }
 
-  toArray(): Array<T | null> {
-    const nodes: Array<T | null> = [];
+  toArray(): Array<T> {
+    const nodes: Array<T> = [];
 
     let currentNode = this.head;
 
@@ -179,7 +183,6 @@ class LinkedList<T> {
         return null;
       }
 
-
       const prevNode = this.getByIndex(index - 1);
       const nextNode = this.getByIndex(index);
 
@@ -195,15 +198,14 @@ class LinkedList<T> {
       this.deleteHead();
     }
 
-    if (index === this.toArray().length - 1) {
+    if (index === this.toArray().length - 1 && index !== 0) {
       this.deleteTail();
     }
-    
+
     if (index !== undefined) {
       if (index > this.toArray().length || index < 0) {
         return null;
       }
-
 
       const prevNode = this.getByIndex(index - 1);
       const nextNode = this.getByIndex(index + 1);
@@ -216,13 +218,6 @@ class LinkedList<T> {
   }
 }
 
-type TListElement = {
-  value: string | null;
-  state: ElementStates;
-  head: string | React.ReactElement | null;
-  tail: string | React.ReactElement | null;
-};
-
 const defaultListElement: TListElement = {
   value: null,
   state: ElementStates.Default,
@@ -233,18 +228,13 @@ const defaultListElement: TListElement = {
 const defaultNumbersArray = ["0", "34", "8", "1"];
 
 export const ListPage: React.FC = () => {
-  const linkedList = useRef(
-    new LinkedList<TListElement>()
-    // .append({ ...defaultListElement, value: "0", head: 'head' })
-    // .append({ ...defaultListElement, value: "34" })
-    // .append({ ...defaultListElement, value: "8" })
-    // .append({ ...defaultListElement, value: "1", tail: 'tail' })
-  );
+  const linkedList = useRef(new LinkedList<TListElement>());
   const [inputNumberValue, setInputNumberValue] = useState<string>("");
   const [inputIndexValue, setInputIndexValue] = useState<number | undefined>(
     undefined
   );
   const [array, setArray] = useState<(TListElement | null)[]>();
+  const [currentButton, setCurrentButton] = useState<TCurrentButton>(null);
 
   const onNumberInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     setInputNumberValue(event.target.value);
@@ -274,7 +264,7 @@ export const ListPage: React.FC = () => {
     }
   }
 
-  const renderCircle = (
+  const renderSmallCircle = (
     item: TListElement,
     isSmall: boolean = false,
     index?: number
@@ -297,7 +287,9 @@ export const ListPage: React.FC = () => {
   }
 
   //добавляем голову
-  const addHead = async () => {
+  const addHead = async (evt: MouseEvent<HTMLButtonElement>) => {
+    setCurrentButton(evt.currentTarget.value as TCurrentButton);
+
     const initialHead = linkedList.current.getHead();
     const itemBeingAdded = {
       ...defaultListElement,
@@ -306,21 +298,30 @@ export const ListPage: React.FC = () => {
     };
     setInputNumberValue("");
 
-    if (initialHead === undefined || initialHead === null) {
-      itemBeingAdded.state = ElementStates.Default;
-      linkedList.current.prepend(itemBeingAdded);
-      setArray(linkedList.current.toArray());
-      return;
-    }
+    if (linkedList.current.toArray().length === 0) {
+      linkedList.current.prepend({
+        ...itemBeingAdded,
+        state: ElementStates.Modified,
+        head: "head",
+        tail: "tail",
+      });
+    } else {
+      if (initialHead === undefined || initialHead === null) {
+        itemBeingAdded.state = ElementStates.Default;
+        linkedList.current.prepend(itemBeingAdded);
+        setArray(linkedList.current.toArray());
+        return;
+      }
 
-    initialHead.head = renderCircle(itemBeingAdded, true);
-    await refreshCircles();
-    initialHead.head = "";
-    linkedList.current.prepend({
-      ...itemBeingAdded,
-      state: ElementStates.Modified,
-      head: "head",
-    });
+      initialHead.head = renderSmallCircle(itemBeingAdded, true);
+      await refreshCircles();
+      initialHead.head = "";
+      linkedList.current.prepend({
+        ...itemBeingAdded,
+        state: ElementStates.Modified,
+        head: "head",
+      });
+    }
 
     await refreshCircles();
 
@@ -330,10 +331,13 @@ export const ListPage: React.FC = () => {
       newHead.state = ElementStates.Default;
       setArray(linkedList.current.toArray());
     }
+    setCurrentButton(null);
   };
 
   //удаляем голову
-  const deleteHead = async () => {
+  const deleteHead = async (evt: MouseEvent<HTMLButtonElement>) => {
+    setCurrentButton(evt.currentTarget.value as TCurrentButton);
+
     const initialHead = linkedList.current.getHead();
     if (initialHead === undefined || initialHead === null) {
       return;
@@ -344,7 +348,7 @@ export const ListPage: React.FC = () => {
       state: ElementStates.Changing,
     };
     initialHead.value = "";
-    initialHead.tail = renderCircle(removedItem, true);
+    initialHead.tail = renderSmallCircle(removedItem, true);
     await refreshCircles();
 
     linkedList.current.deleteHead();
@@ -353,10 +357,13 @@ export const ListPage: React.FC = () => {
       newHead.head = "head";
     }
     await refreshCircles();
+    setCurrentButton(null);
   };
 
   //добавляем хвост
-  const addTail = async () => {
+  const addTail = async (evt: MouseEvent<HTMLButtonElement>) => {
+    setCurrentButton(evt.currentTarget.value as TCurrentButton);
+
     const initialTail = linkedList.current.getTail();
     const itemBeingAdded = {
       ...defaultListElement,
@@ -365,23 +372,33 @@ export const ListPage: React.FC = () => {
     };
     setInputNumberValue("");
 
-    if (initialTail === undefined || initialTail === null) {
-      itemBeingAdded.state = ElementStates.Default;
-      linkedList.current.append(itemBeingAdded);
-      setArray(linkedList.current.toArray());
-      return;
+    if (linkedList.current.toArray().length === 0) {
+      linkedList.current.prepend({
+        ...itemBeingAdded,
+        state: ElementStates.Modified,
+        head: "head",
+        tail: "tail",
+      });
+    } else {
+      if (initialTail === undefined || initialTail === null) {
+        itemBeingAdded.state = ElementStates.Default;
+        linkedList.current.append(itemBeingAdded);
+        setArray(linkedList.current.toArray());
+        return;
+      }
+
+      initialTail.head = renderSmallCircle(itemBeingAdded, true);
+      await refreshCircles();
+
+      initialTail.tail = "";
+      initialTail.head = "";
+      linkedList.current.append({
+        ...itemBeingAdded,
+        state: ElementStates.Modified,
+        tail: "tail",
+      });
     }
 
-    initialTail.head = renderCircle(itemBeingAdded, true);
-    await refreshCircles();
-
-    initialTail.tail = "";
-    initialTail.head = "";
-    linkedList.current.append({
-      ...itemBeingAdded,
-      state: ElementStates.Modified,
-      tail: "tail",
-    });
     await refreshCircles();
 
     //получаем новый Tail списка и меняем в нём цвет кружка на синий
@@ -390,10 +407,13 @@ export const ListPage: React.FC = () => {
       newTail.state = ElementStates.Default;
       setArray(linkedList.current.toArray());
     }
+    setCurrentButton(null);
   };
 
   //Удаляем хвост
-  const deleteTail = async () => {
+  const deleteTail = async (evt: MouseEvent<HTMLButtonElement>) => {
+    setCurrentButton(evt.currentTarget.value as TCurrentButton);
+
     const initialTail = linkedList.current.getTail();
     if (initialTail === undefined || initialTail === null) {
       return;
@@ -404,7 +424,7 @@ export const ListPage: React.FC = () => {
       state: ElementStates.Changing,
     };
     initialTail.value = "";
-    initialTail.tail = renderCircle(removedItem, true);
+    initialTail.tail = renderSmallCircle(removedItem, true);
     await refreshCircles();
 
     linkedList.current.deleteTail();
@@ -413,29 +433,112 @@ export const ListPage: React.FC = () => {
       newTail.tail = "tail";
     }
     await refreshCircles();
+    setCurrentButton(null);
   };
 
-  const addByIndex = async () => {
-    const initialItem = {
+  //добавить по индексу
+  const addByIndex = async (evt: MouseEvent<HTMLButtonElement>) => {
+    setCurrentButton(evt.currentTarget.value as TCurrentButton);
+    let initialItem = {
       ...defaultListElement,
       value: inputNumberValue,
-      state: ElementStates.Modified
+      state: ElementStates.Changing,
+    };
+    if (inputIndexValue !== undefined) {
+      for (let i = 0; i <= inputIndexValue; i++) {
+        if (i === 0) {
+          await refreshCircles();
+          linkedList.current.toArray()[i].head = renderSmallCircle(
+            initialItem,
+            true
+          );
+          await refreshCircles();
+        }
+        if (i > 0) {
+          await refreshCircles();
+          linkedList.current.toArray()[i - 1].state = ElementStates.Changing;
+          if (i - 1 === 0) {
+            linkedList.current.toArray()[0].head = "head";
+          } else {
+            linkedList.current.toArray()[i - 1].head = "";
+          }
+          linkedList.current.toArray()[i].head = renderSmallCircle(
+            initialItem,
+            true
+          );
+          await refreshCircles();
+        }
+      }
+      for (let i = 0; i <= inputIndexValue; i++) {
+        linkedList.current.toArray()[i].state = ElementStates.Default;
+      }
+      linkedList.current.toArray()[inputIndexValue].head = "";
     }
-    linkedList.current.addByIndex(inputIndexValue, initialItem)
-    setInputNumberValue('');
+
+    if (inputIndexValue === 0) {
+      initialItem = {
+        ...initialItem,
+        head: "head",
+      };
+    }
+    linkedList.current.addByIndex(inputIndexValue, {
+      ...initialItem,
+      state: ElementStates.Modified,
+    });
+    setInputNumberValue("");
     setInputIndexValue(undefined);
     await refreshCircles();
-    const newElement = linkedList.current.getByIndex(inputIndexValue)?.value
-    if(newElement) {
-      newElement.state = ElementStates.Default
+
+    const newElement = linkedList.current.getByIndex(inputIndexValue)?.value;
+    if (newElement) {
+      newElement.state = ElementStates.Default;
     }
     await refreshCircles();
+    setCurrentButton(null);
   };
 
-  const deleteByIndex = async () => {
-    linkedList.current.deleteByIndex(inputIndexValue);
-    setInputIndexValue(undefined);
+  //удалить по индексу
+  const deleteByIndex = async (evt: MouseEvent<HTMLButtonElement>) => {
+    setCurrentButton(evt.currentTarget.value as TCurrentButton);
+    if (inputIndexValue !== undefined) {
+      for (let i = 0; i <= inputIndexValue; i++) {
+        await refreshCircles();
+        linkedList.current.toArray()[i].state = ElementStates.Changing;
+        await refreshCircles();
+      }
+    }
+
+    const initialItem = linkedList.current.getByIndex(inputIndexValue)?.value;
+    if (initialItem === undefined || initialItem === null) {
+      return;
+    }
+
+    const removedValue = { ...initialItem, state: ElementStates.Changing };
+    initialItem.value = "";
+    initialItem.state = ElementStates.Default;
+    initialItem.tail = renderSmallCircle(removedValue, true);
     await refreshCircles();
+
+    linkedList.current.deleteByIndex(inputIndexValue);
+
+    if (inputIndexValue !== undefined) {
+      for (let i = 0; i < inputIndexValue; i++) {
+        linkedList.current.toArray()[i].state = ElementStates.Default;
+      }
+    }
+    setInputIndexValue(undefined);
+    if (linkedList.current.toArray().length > 0) {
+      if (inputIndexValue === linkedList.current.toArray().length) {
+        linkedList.current.toArray()[
+          linkedList.current.toArray().length - 1
+        ].tail = "tail";
+      }
+      if (inputIndexValue === 0) {
+        linkedList.current.toArray()[0].head = "head";
+      }
+    }
+    await refreshCircles();
+    setCurrentButton(null);
   };
 
   return (
@@ -449,50 +552,67 @@ export const ListPage: React.FC = () => {
             maxLength={4}
             value={inputNumberValue}
             onChange={onNumberInputChange}
+            extraClass={styles.input}
           />
           <Button
             text="Добавить в head"
             type="button"
-            isLoader={false}
+            value={"Добавить в head"}
+            isLoader={currentButton === "Добавить в head"}
             onClick={addHead}
+            disabled={!currentButton ? false : true}
           />
           <Button
             text="Добавить в tail"
             type="button"
-            isLoader={false}
+            value={"Добавить в tail"}
+            isLoader={currentButton === "Добавить в tail"}
             onClick={addTail}
+            disabled={!currentButton ? false : true}
           />
           <Button
             text="Удалить из head"
             type="button"
-            isLoader={false}
+            value={"Удалить из head"}
+            isLoader={currentButton === "Удалить из head"}
             onClick={deleteHead}
+            disabled={!currentButton ? false : true}
           />
           <Button
             text="Удалить из tail"
             type="button"
-            isLoader={false}
+            value={"Удалить из tail"}
+            isLoader={currentButton === "Удалить из tail"}
             onClick={deleteTail}
+            disabled={!currentButton ? false : true}
           />
         </div>
         <div className={styles[`button-wrapper`]}>
           <Input
             type="number"
             placeholder="введите индекс"
-            value={inputIndexValue  === undefined ? "" : inputIndexValue}
+            max={linkedList.current.toArray().length - 1}
+            value={inputIndexValue === undefined ? "" : inputIndexValue}
             onChange={onIndexInputChange}
+            extraClass={styles.input}
           />
           <Button
             text="Добавить по индексу"
             type="button"
-            isLoader={false}
+            isLoader={currentButton === "Добавить по индексу"}
+            value={"Добавить по индексу"}
             onClick={addByIndex}
+            linkedList="big"
+            disabled={!currentButton ? false : true}
           />
           <Button
             text="Удалить по индексу"
             type="button"
-            isLoader={false}
+            isLoader={currentButton === "Удалить по индексу"}
+            value={"Удалить по индексу"}
             onClick={deleteByIndex}
+            linkedList="big"
+            disabled={!currentButton ? false : true}
           />
         </div>
       </div>

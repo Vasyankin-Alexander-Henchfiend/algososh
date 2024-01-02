@@ -1,13 +1,15 @@
 .controls-container {
     display: flex;
+    width: 952px;
     gap: 12px;
     flex-direction: column;
+    margin: 0 auto;
 }
 
 .button-wrapper {
     display: flex;
     gap: 12px;
-    justify-content: center;
+    justify-content: space-between;
 }
 
 .circles {
@@ -22,4 +24,8 @@
     justify-content: center;
     gap: 12px;
     align-items: center;
+}
+
+.input {
+    max-width: 204px;
 }
