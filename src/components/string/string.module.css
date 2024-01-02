@@ -1,0 +1,14 @@
+.container {
+    width: 567px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 auto;
+}
+
+.circle-wrapper {
+    display: flex;
+    gap: 16px;
+    margin: 120px 0 0;
+    justify-content: center;
+}
