@@ -152,7 +152,7 @@ class LinkedList<T> {
   getByIndex(index: number | undefined) {
     let counter = 0;
 
-    if (index) {
+    if (index !== undefined) {
       if (index >= this.toArray().length || index < 0) {
         return null;
       }
@@ -170,15 +170,15 @@ class LinkedList<T> {
   }
 
   addByIndex(index: number | undefined, value: T) {
-    if (index) {
-      if (index >= this.toArray().length || index < 0) {
+    if (index === 0) {
+      this.prepend(value);
+    }
+
+    if (index !== undefined) {
+      if (index > this.toArray().length || index < 0) {
         return null;
       }
 
-      if (index === 0) {
-        this.prepend(value);
-        return this;
-      }
 
       const prevNode = this.getByIndex(index - 1);
       const nextNode = this.getByIndex(index);
@@ -191,18 +191,28 @@ class LinkedList<T> {
   }
 
   deleteByIndex(index: number | undefined) {
-    if(index) {
-      if (index >= this.toArray().length || index < 0) {
+    if (index === 0) {
+      this.deleteHead();
+    }
+
+    if (index === this.toArray().length - 1) {
+      this.deleteTail();
+    }
+    
+    if (index !== undefined) {
+      if (index > this.toArray().length || index < 0) {
         return null;
       }
 
-      if (index === 0) {
-        this.deleteHead()
-        return this;
-      }
 
-      
+      const prevNode = this.getByIndex(index - 1);
+      const nextNode = this.getByIndex(index + 1);
+
+      if (prevNode && nextNode) {
+        prevNode.next = nextNode;
+      }
     }
+    return this;
   }
 }
 
@@ -423,7 +433,9 @@ export const ListPage: React.FC = () => {
   };
 
   const deleteByIndex = async () => {
+    linkedList.current.deleteByIndex(inputIndexValue);
     setInputIndexValue(undefined);
+    await refreshCircles();
   };
 
   return (
